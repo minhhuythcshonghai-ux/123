@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Quản lý Lịch công tác TH\u0026THCS Thống Nhất",
+  "description": "Hệ thống quản lý lịch công tác và thông báo dành cho cán bộ giáo viên trường TH\u0026THCS Thống Nhất.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

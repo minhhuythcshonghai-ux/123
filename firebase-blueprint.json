@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Cán bộ giáo viên trong trường",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "teacher"] },
+        "photoURL": { "type": "string" }
+      },
+      "required": ["uid", "displayName", "email", "role"]
+    },
+    "Schedule": {
+      "title": "Schedule",
+      "description": "Lịch công tác tuần",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "weekNumber": { "type": "integer" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "content": { "type": "string", "description": "Nội dung lịch công tác (Markdown)" },
+        "authorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["weekNumber", "startDate", "endDate", "content", "authorId", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Thông báo cho giáo viên",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["info", "warning", "urgent"] },
+        "authorId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "message", "type", "authorId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Thông tin người dùng"
+    },
+    "/schedules/{scheduleId}": {
+      "schema": "Schedule",
+      "description": "Danh sách lịch công tác"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Danh sách thông báo"
+    }
+  }
+}

@@ -1,0 +1,100 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (uid)
+    // Fields:
+    //   - uid: string (required)
+    //   - displayName: string (required)
+    //   - email: string (required)
+    //   - role: string (required, 'admin' | 'teacher')
+    //   - photoURL: string (optional)
+    //
+    // Collection: schedules
+    // Document ID: scheduleId
+    // Fields:
+    //   - weekNumber: int (required)
+    //   - startDate: string (required, format: date)
+    //   - endDate: string (required, format: date)
+    //   - content: string (required, Markdown)
+    //   - authorId: string (required)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: notifications
+    // Document ID: notificationId
+    // Fields:
+    //   - title: string (required)
+    //   - message: string (required)
+    //   - type: string (required, 'info' | 'warning' | 'urgent')
+    //   - authorId: string (required)
+    //   - createdAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "minhhuythcshonghai@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'email', 'role']) &&
+             data.uid is string && data.displayName is string && data.email is string &&
+             data.role in ['admin', 'teacher'] &&
+             data.displayName.size() < 100 && data.email.size() < 100;
+    }
+
+    function isValidSchedule(data) {
+      return data.keys().hasAll(['weekNumber', 'startDate', 'endDate', 'content', 'authorId', 'createdAt']) &&
+             data.weekNumber is int && data.startDate is string && data.endDate is string &&
+             data.content is string && data.authorId is string && data.createdAt is timestamp &&
+             data.content.size() < 10000;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['title', 'message', 'type', 'authorId', 'createdAt']) &&
+             data.title is string && data.message is string && data.type in ['info', 'warning', 'urgent'] &&
+             data.authorId is string && data.createdAt is timestamp &&
+             data.title.size() < 200 && data.message.size() < 2000;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && (request.resource.data.role == 'teacher' || isAdmin());
+      allow update: if isAuthenticated() && (isAdmin() || (isOwner(userId) && request.resource.data.role == resource.data.role && isValidUser(request.resource.data)));
+    }
+
+    match /schedules/{scheduleId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidSchedule(request.resource.data);
+      allow update: if isAdmin() && isValidSchedule(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin() && isValidNotification(request.resource.data);
+      allow update: if isAdmin() && isValidNotification(request.resource.data);
+      allow delete: if isAdmin();
+    }
+  }
+}
